@@ -1,0 +1,9 @@
+{
+    "token": "<VOTRE TOKEN DE BOT DISCORD>",
+    "inviteUrl": "<VOTRE URL D'INVITATION DE BOT DISCORD>",
+    "clientId": "<L'APPLICATION ID DE VOTRE BOT DISCORD>",
+    "guildId": "<L'ID DU SERVEUR DISCORD SUR LEQUEL VOUS FAITES TOURNER LE BOT>",
+    "lastCommandDeployment": 0,
+    "commandRevisions": {},
+    "openAIUserKeys": {}
+}

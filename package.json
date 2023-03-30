@@ -1,0 +1,26 @@
+{
+  "name": "ecv-discord-bot",
+  "version": "0.1.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "dev": "nodemon --exec node dist/index.js",
+    "start": "node dist/index.js",
+    "test": "exit 0",
+    "watch": "tsc -w"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^14.8.0",
+    "openai": "^3.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^18.15.10",
+    "nodemon": "^2.0.22",
+    "rimraf": "^4.4.1",
+    "typescript": "^5.0.2"
+  }
+}
