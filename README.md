@@ -22,7 +22,7 @@ npm run clean && npm run watch & npm run dev
 ```
 
 ## Pensez à configurer le bot
-Pour cela il suffit de compléter le fichier `discobot.json` à la racine du dépôt.
+Pour cela il suffit de créer un fichier `discobot.json` à la racine du dépôt, qui ne sera pas sauvegardé par git (Cf. `.gitignore`), en copiant `discobot.example.json`, et dans lequel vous pouvez mettre les clés privées de votre Bot.
 
 ## Fonctionnalitées prévues
 Pour l'instant c'est un bot destiné à ne travailler que sur un serveur à la fois.
