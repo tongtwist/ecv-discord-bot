@@ -22,11 +22,9 @@ npm run clean && npm run watch & npm run dev
 ```
 
 ## Pensez à configurer le bot
----
 Pour cela il suffit de compléter le fichier `discobot.json` à la racine du dépôt.
 
 ## Fonctionnalitées prévues
----
 Pour l'instant c'est un bot destiné à ne travailler que sur un serveur à la fois.
 - [ ] Rendre le bot "multi-serveurs"
 - [x] Réponds aux "hellos" que vous lui adressez par la commande `/hello`
@@ -48,7 +46,6 @@ Pour l'instant c'est un bot destiné à ne travailler que sur un serveur à la f
 Les futures fonctionnalitées "*DIY/On-premise*" risquent de nécessiter beaucoup de ressources en mémoire, processeur, espace disque et peut-être GPU. Si la machine hôte du bot ne fournie pas ces ressources, les fonctionnalitées pourraient ne pas fonctionner. Tout cela sera documenté succintement plus tard.
 
 ## Idées à explorer pouvant alimenter la roadmap
----
 - Communiquer avec le bot par la voix
   - Lui demander des choses par la voix
   - Lui donner une voix et l'entendre répondre en audio
