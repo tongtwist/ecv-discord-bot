@@ -1,24 +1,19 @@
-import {
-	Configuration,
-	OpenAIApi,
-	CreateCompletionResponse,
-	CreateChatCompletionResponse,
-	Model,
-} from "openai"
-import { ListModels } from "./ListModels"
-import { TCompletionParams, Completion } from "./Completion"
-import { TChatCompletionParams, ChatCompletion } from "./ChatCompletion"
+import {Configuration, OpenAIApi, CreateCompletionResponse, CreateChatCompletionResponse, Model} from "openai"
+import {ListModels} from "./ListModels"
+import {TCompletionParams, Completion} from "./Completion"
+import {TChatCompletionParams, ChatCompletion} from "./ChatCompletion"
 
 export class OpenAI {
 	private _models: Model[] = []
 
-	constructor (
-		private readonly _key: string,
-		private readonly _api: OpenAIApi
-	) {}
+	constructor(private readonly _key: string, private readonly _api: OpenAIApi) {}
 
-	get key(): string { return this._key }
-	get models(): Model[] { return [...this._models] }
+	get key(): string {
+		return this._key
+	}
+	get models(): Model[] {
+		return [...this._models]
+	}
 
 	async listModels(): Promise<Model[]> {
 		if (this._models.length === 0) {
@@ -39,12 +34,12 @@ export class OpenAI {
 	}
 
 	static async fromConfig(path: string): Promise<OpenAI> {
-		const { apikey } = await require(path)
+		const {apikey} = await require(path)
 		return OpenAI.fromKey(apikey)
 	}
 
 	static fromKey(apiKey: string): OpenAI {
-		const cfg = new Configuration({ apiKey })
+		const cfg = new Configuration({apiKey})
 		const api = new OpenAIApi(cfg)
 		return new OpenAI(apiKey, api)
 	}

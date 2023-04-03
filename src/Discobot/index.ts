@@ -1,4 +1,4 @@
-import { writeFile } from "fs/promises"
+import {writeFile} from "fs/promises"
 import {
 	BaseInteraction,
 	ChatInputCommandInteraction,
@@ -7,11 +7,11 @@ import {
 	Events,
 	GatewayIntentBits,
 	REST,
-	Routes
+	Routes,
 } from "discord.js"
-import { OpenAI } from "../OpenAI"
-import { log } from "../log"
-import type { TCommand } from "./commands/command.spec"
+import {OpenAI} from "../OpenAI"
+import {log} from "../log"
+import type {TCommand} from "./commands/command.spec"
 
 export class Discobot extends Client {
 	private static readonly _minCommandDeploymentAge = 1000 * 60 * 60 * 24
@@ -25,18 +25,18 @@ export class Discobot extends Client {
 		private readonly _clientId: string,
 		private readonly _guildId: string,
 		private _lastCommandDeployment: number,
-		private _commandRevisions: { [name: string]: number },
+		private _commandRevisions: {[name: string]: number},
 		private readonly _inviteUrl: string,
-		private readonly _openAIs: { [userId: string]: OpenAI },
+		private readonly _openAIs: {[userId: string]: OpenAI},
 		private readonly _configPath: string,
 	) {
-		super({ intents: [GatewayIntentBits.Guilds] })
+		super({intents: [GatewayIntentBits.Guilds]})
 		this._commands = new Collection()
 	}
 
 	private async _saveConfig(): Promise<void> {
 		// Crée l'objet de stockage des clés OpenAI
-		const openAIUserKeys: { [userId: string]: string } = {}
+		const openAIUserKeys: {[userId: string]: string} = {}
 		for (const [userId, openAI] of Object.entries(this._openAIs)) {
 			openAIUserKeys[userId] = openAI.key
 		}
@@ -54,9 +54,9 @@ export class Discobot extends Client {
 		await writeFile(this._configPath, JSON.stringify(config, null, 4))
 	}
 
-	private async _loadCommands(): Promise<[ TCommand[], string[] ]> {
+	private async _loadCommands(): Promise<[TCommand[], string[]]> {
 		// Charge la liste des objets commands
-		const { commands } = await import("./commands")
+		const {commands} = await import("./commands")
 		// Initialise quelques variables de gestion des redéploiements
 		const now = Date.now()
 		const lastDeplAge = now - this._lastCommandDeployment
@@ -66,8 +66,9 @@ export class Discobot extends Client {
 		for (const command of commands) {
 			this._commands.set(command.data.name, command)
 			commandList.push(command.data.name)
-			const shouldBeRedeployed = lastDeplAge > Discobot._minCommandDeploymentAge
-				|| (this._commandRevisions[command.data.name] ?? 0) < command.revision
+			const shouldBeRedeployed =
+				lastDeplAge > Discobot._minCommandDeploymentAge ||
+				(this._commandRevisions[command.data.name] ?? 0) < command.revision
 			if (shouldBeRedeployed) {
 				commandsThatShouldBeDeployed.push(command)
 			}
@@ -86,13 +87,10 @@ export class Discobot extends Client {
 
 	private async _loadAndHandleEvents(): Promise<void> {
 		// Charge les évènements à gérer
-		const { events } = await import("./events")
+		const {events} = await import("./events")
 		// Branche les handlers d'évènements sur les évènements
 		for (const event of events) {
-			this[event.once ? "once" : "on"](
-				event.name,
-				(...args: any[]) => event.execute(this, ...args)
-			)
+			this[event.once ? "once" : "on"](event.name, (...args: any[]) => event.execute(this, ...args))
 		}
 	}
 
@@ -106,7 +104,7 @@ export class Discobot extends Client {
 			log(`Error while executing command ${interaction.commandName}: ${error}`)
 			await interaction.reply({
 				content: "There was an error while executing this command!",
-				ephemeral: true
+				ephemeral: true,
 			})
 		}
 	}
@@ -116,16 +114,15 @@ export class Discobot extends Client {
 		// Crée un array d'objets JSON à passer à l'API Discord
 		const newCommands = this.commandsToRedeploy.map((command: TCommand) => command.data.toJSON())
 		// Instancie un client d'API REST Discord
-		const rest = new REST({ version: "10" }).setToken(this._token)
+		const rest = new REST({version: "10"}).setToken(this._token)
 		// Dialogue avec l'API REST de Discord
 		try {
 			// Récupère et affiche la liste des commandes connues de l'API de Discord
-			let commands = await rest.get(Routes.applicationGuildCommands(this._clientId, this._guildId)) as any[]
+			let commands = (await rest.get(Routes.applicationGuildCommands(this._clientId, this._guildId))) as any[]
 			log(`- Registered commands: ${commands.map((command: any) => command.name).join(", ")}`)
 			// Retire de ces commandes connues celles qui n'existent plus et celles à redéployer
 			commands = commands.filter((command: any) => {
-				return this.commandList.includes(command.name)
-					&& !newCommands.some((c: any) => c.name === command.name)
+				return this.commandList.includes(command.name) && !newCommands.some((c: any) => c.name === command.name)
 			})
 			log(`- Commands to keep: ${commands.map((command: any) => command.name).join(", ")}`)
 			// Ajoute à la liste des commandes à garder, celles à redéployer
@@ -137,10 +134,9 @@ export class Discobot extends Client {
 				return
 			}
 			// Redéploiement des commandes sur l'API de Discord
-			const resRedeploy = await rest.put(
-				Routes.applicationGuildCommands(this._clientId, this._guildId),
-				{ body: commands }
-			) as any[]
+			const resRedeploy = (await rest.put(Routes.applicationGuildCommands(this._clientId, this._guildId), {
+				body: commands,
+			})) as any[]
 			log(`Successfully redeployed ${resRedeploy.length} application (/) commands.`)
 			// Crée le nouvel objet des révisions de commandes à enregistrer dans le fichier de config
 			const newCommandRevisions: {[name: string]: number} = {}
@@ -152,7 +148,7 @@ export class Discobot extends Client {
 			await this._saveConfig()
 			// Nettoie la liste des commandes à redéployer
 			this.commandsToRedeploy = []
-		} catch(error) {
+		} catch (error) {
 			log(`Error while redeploying commands: ${error}`)
 		}
 	}
@@ -170,7 +166,7 @@ export class Discobot extends Client {
 		const ret = this._openAIs[userId]
 		return ret
 	}
-	
+
 	async start(): Promise<void> {
 		// Charge les commandes
 		const [commandsToRedeploy, commandList] = await this._loadCommands()
@@ -185,28 +181,12 @@ export class Discobot extends Client {
 	}
 
 	static async fromConfig(path: string): Promise<Discobot> {
-		const {
-			token,
-			inviteUrl,
-			clientId,
-			guildId,
-			lastCommandDeployment,
-			commandRevisions,
-			openAIUserKeys
-		} = await require(path)
+		const {token, inviteUrl, clientId, guildId, lastCommandDeployment, commandRevisions, openAIUserKeys} =
+			await require(path)
 		const openAIs: {[userId: string]: OpenAI} = {}
 		for (const userId in openAIUserKeys) {
 			openAIs[userId] = OpenAI.fromKey(openAIUserKeys[userId])
 		}
-		return new Discobot(
-			token,
-			clientId,
-			guildId,
-			lastCommandDeployment,
-			commandRevisions,
-			inviteUrl,
-			openAIs,
-			path,
-		)
+		return new Discobot(token, clientId, guildId, lastCommandDeployment, commandRevisions, inviteUrl, openAIs, path)
 	}
 }

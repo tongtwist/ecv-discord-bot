@@ -4,13 +4,10 @@ import {
 	SlashCommandStringOption,
 	SlashCommandNumberOption,
 } from "discord.js"
-import type {
-	CreateCompletionRequest,
-	CreateCompletionResponseChoicesInner
-} from "openai"
-import type { OpenAI } from "../../../OpenAI"
-import type { Discobot } from "../../../Discobot"
-import type { TCommand } from "../command.spec"
+import type {CreateCompletionRequest, CreateCompletionResponseChoicesInner} from "openai"
+import type {OpenAI} from "../../../OpenAI"
+import type {Discobot} from "../../../Discobot"
+import type {TCommand} from "../command.spec"
 
 export const complete: TCommand = {
 	revision: 3,
@@ -18,47 +15,44 @@ export const complete: TCommand = {
 	data: new SlashCommandBuilder()
 		.setName("openai-complete")
 		.setDescription("Ask to OpenAI to complete a text")
-		.addStringOption(
-			(option: SlashCommandStringOption) => option
-				.setName("text")
-				.setDescription("Text to complete")
-				.setRequired(true)
+		.addStringOption((option: SlashCommandStringOption) =>
+			option.setName("text").setDescription("Text to complete").setRequired(true),
 		)
-		.addStringOption(
-			(option: SlashCommandStringOption) => option
+		.addStringOption((option: SlashCommandStringOption) =>
+			option
 				.setName("model")
 				.setDescription("Model to use (default: text-davinci-003)")
 				.setRequired(false)
 				.addChoices(
-					{ name: "babbage", value: "babbage" },
-					{ name: "davinci", value: "davinci" },
-					{ name: "text-davinci-001", value: "text-davinci-001" },
-					{ name: "ada", value: "ada" },
-					{ name: "curie-instruct-beta", value: "curie-instruct-beta" },
-					{ name: "text-curie-001", value: "text-curie-001" },
-					{ name: "text-ada-001", value: "text-ada-001" },
-					{ name: "text-davinci-003", value: "text-davinci-003" },
-					{ name: "davinci-instruct-beta", value: "davinci-instruct-beta" },
-					{ name: "text-babbage-001", value: "text-babbage-001" },
-					{ name: "curie", value: "curie" },
-					{ name: "text-davinci-002", value: "text-davinci-002" },
-				)
+					{name: "babbage", value: "babbage"},
+					{name: "davinci", value: "davinci"},
+					{name: "text-davinci-001", value: "text-davinci-001"},
+					{name: "ada", value: "ada"},
+					{name: "curie-instruct-beta", value: "curie-instruct-beta"},
+					{name: "text-curie-001", value: "text-curie-001"},
+					{name: "text-ada-001", value: "text-ada-001"},
+					{name: "text-davinci-003", value: "text-davinci-003"},
+					{name: "davinci-instruct-beta", value: "davinci-instruct-beta"},
+					{name: "text-babbage-001", value: "text-babbage-001"},
+					{name: "curie", value: "curie"},
+					{name: "text-davinci-002", value: "text-davinci-002"},
+				),
 		)
-		.addNumberOption(
-			(option: SlashCommandNumberOption) => option
+		.addNumberOption((option: SlashCommandNumberOption) =>
+			option
 				.setName("max_tokens")
 				.setDescription("Maximum number of tokens to generate (0 < max_tokens <= 2048. Default: 100)")
 				.setRequired(false)
 				.setMinValue(1)
-				.setMaxValue(2048)
+				.setMaxValue(2048),
 		)
-		.addNumberOption(
-			(option: SlashCommandNumberOption) => option
+		.addNumberOption((option: SlashCommandNumberOption) =>
+			option
 				.setName("temperature")
 				.setDescription("Temperature (0.0 <= temperature <= 1.0. Default: 0.5)")
 				.setRequired(false)
 				.setMinValue(0.0)
-				.setMaxValue(2.0)
+				.setMaxValue(2.0),
 		),
 
 	execute: async (interaction: ChatInputCommandInteraction): Promise<void> => {
@@ -86,7 +80,7 @@ export const complete: TCommand = {
 		const temperature = interaction.options.getNumber("temperature", false)
 
 		// On construit un objet de requête pour OpenAI
-		const request: Partial<CreateCompletionRequest> = { prompt }
+		const request: Partial<CreateCompletionRequest> = {prompt}
 		typeof model === "string" && (request.model = model)
 		typeof maxTokens === "number" && (request.max_tokens = Math.round(maxTokens))
 		typeof temperature === "number" && (request.temperature = temperature)
@@ -97,9 +91,9 @@ export const complete: TCommand = {
 			await interaction.editReply("OpenAI failed to complete the text")
 			return
 		}
-		const { choices, usage } = completion
+		const {choices, usage} = completion
 		const choice: CreateCompletionResponseChoicesInner = choices[0]
-		const { text, finish_reason } = choice
+		const {text, finish_reason} = choice
 
 		// On créé un message de réponse
 		const reponse = `${prompt}${text}`
@@ -110,7 +104,9 @@ export const complete: TCommand = {
 		// En cas de réponse incomplète, on indique à l'utilisateur comment faire pour avoir une réponse plus complète
 		if (finish_reason === "length") {
 			// openAI n'a pas terminé sa réponse car la longueur maximale a été atteinte
-			await interaction.followUp(`J'aurai voulu en dire plus, mais j'ai atteind ma longueur maximum autorisée de réponse fixée à ${usage?.completion_tokens ?? "n"} tokens.
+			await interaction.followUp(`J'aurai voulu en dire plus, mais j'ai atteind ma longueur maximum autorisée de réponse fixée à ${
+				usage?.completion_tokens ?? "n"
+			} tokens.
 Demandez moi une réponse plus courte ou autorisez moi à en dire plus via le paramètre "max_tokens".`)
 		} else if (finish_reason !== "stop") {
 			// openAI n'a pas terminé sa réponse pour une autre raison

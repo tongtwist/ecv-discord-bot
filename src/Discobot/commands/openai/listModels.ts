@@ -1,18 +1,13 @@
-import {
-	ChatInputCommandInteraction,
-	SlashCommandBuilder
-} from "discord.js"
-import type { Model } from "openai"
-import type { OpenAI } from "../../../OpenAI"
-import type { Discobot } from "../../../Discobot"
-import type { TCommand } from "../command.spec"
+import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js"
+import type {Model} from "openai"
+import type {OpenAI} from "../../../OpenAI"
+import type {Discobot} from "../../../Discobot"
+import type {TCommand} from "../command.spec"
 
 export const listModels: TCommand = {
 	revision: 1,
 
-	data: new SlashCommandBuilder()
-		.setName("openai-models")
-		.setDescription("List OpenAI available models"),
+	data: new SlashCommandBuilder().setName("openai-models").setDescription("List OpenAI available models"),
 
 	execute: async (interaction: ChatInputCommandInteraction): Promise<void> => {
 		// Le traitement peut prendre du temps mais il faut répondre tout de suite à Discord.
@@ -36,6 +31,8 @@ export const listModels: TCommand = {
 		const models: Model[] = await openAI.listModels()
 
 		// On répond à Discord avec la liste des modèles
-		await interaction.editReply(`OpenAI models actually are ${models.map((model: Model) => `"${model.id}"`).join(", ")}`)
-	}
+		await interaction.editReply(
+			`OpenAI models actually are ${models.map((model: Model) => `"${model.id}"`).join(", ")}`,
+		)
+	},
 }

@@ -1,10 +1,6 @@
-import type { AxiosResponse } from "axios"
-import type {
-	OpenAIApi,
-	CreateCompletionRequest,
-	CreateCompletionResponse,
-} from "openai"
-import { log } from "../log"
+import type {AxiosResponse} from "axios"
+import type {OpenAIApi, CreateCompletionRequest, CreateCompletionResponse} from "openai"
+import {log} from "../log"
 
 export type TCompletionParams = Partial<CreateCompletionRequest> | string
 
@@ -17,11 +13,8 @@ export class Completion {
 
 	private readonly _request?: Partial<CreateCompletionRequest>
 
-	constructor(
-		private readonly _api: OpenAIApi,
-		request?: TCompletionParams
-	) {
-		this._request = typeof request === "string" ? { prompt: request } : request
+	constructor(private readonly _api: OpenAIApi, request?: TCompletionParams) {
+		this._request = typeof request === "string" ? {prompt: request} : request
 	}
 
 	async execute(): Promise<CreateCompletionResponse | false> {

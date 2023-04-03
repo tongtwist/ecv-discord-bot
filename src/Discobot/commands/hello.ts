@@ -1,5 +1,5 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, SlashCommandStringOption } from "discord.js"
-import type { TCommand } from "./command.spec"
+import {ChatInputCommandInteraction, SlashCommandBuilder, SlashCommandStringOption} from "discord.js"
+import type {TCommand} from "./command.spec"
 
 export const helloCommand: TCommand = {
 	revision: 1,
@@ -7,11 +7,8 @@ export const helloCommand: TCommand = {
 	data: new SlashCommandBuilder()
 		.setName("hello")
 		.setDescription("Replies to Hello")
-		.addStringOption(
-			(option: SlashCommandStringOption) => option
-				.setName("name")
-				.setDescription("Your name")
-				.setRequired(false)
+		.addStringOption((option: SlashCommandStringOption) =>
+			option.setName("name").setDescription("Your name").setRequired(false),
 		),
 
 	execute: async (interaction: ChatInputCommandInteraction): Promise<void> => {

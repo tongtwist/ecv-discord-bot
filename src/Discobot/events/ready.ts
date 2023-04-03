@@ -1,6 +1,6 @@
-import { Events } from "discord.js"
-import type { TEvent } from "./event.spec"
-import type { Discobot } from "../index"
+import {Events} from "discord.js"
+import type {TEvent} from "./event.spec"
+import type {Discobot} from "../index"
 
 export const ready: TEvent = {
 	name: Events.ClientReady,
@@ -10,5 +10,5 @@ export const ready: TEvent = {
 		if (bot.commandsToRedeploy.length > 0) {
 			await bot.redeployCommands()
 		}
-	}
+	},
 }
