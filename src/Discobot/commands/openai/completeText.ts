@@ -4,16 +4,19 @@ import {
 	SlashCommandStringOption,
 	SlashCommandNumberOption,
 } from "discord.js"
-import type {CreateCompletionRequest, CreateCompletionResponseChoicesInner} from "openai"
+import type {CreateCompletionRequest, CreateCompletionResponse, CreateCompletionResponseChoicesInner} from "openai"
+import type {IResult} from "../../../Result.spec"
 import type {OpenAI} from "../../../OpenAI"
-import type {Discobot} from "../../../Discobot"
-import type {TCommand} from "../command.spec"
+import type {Discobot} from "../.."
+import type {ICommand} from "../../command.spec"
+import Command from "../../Command"
+import {log} from "../../../log"
 
-export const complete: TCommand = {
-	revision: 3,
+export const completeText: ICommand = Command.fromConfig({
+	revision: 4,
 
 	data: new SlashCommandBuilder()
-		.setName("openai-complete")
+		.setName("openai-complete-text")
 		.setDescription("Ask to OpenAI to complete a text")
 		.addStringOption((option: SlashCommandStringOption) =>
 			option.setName("text").setDescription("Text to complete").setRequired(true),
@@ -53,7 +56,7 @@ export const complete: TCommand = {
 				.setRequired(false)
 				.setMinValue(0.0)
 				.setMaxValue(2.0),
-		),
+		) as SlashCommandBuilder,
 
 	execute: async (interaction: ChatInputCommandInteraction): Promise<void> => {
 		// Le traitement peut prendre du temps mais il faut répondre tout de suite à Discord.
@@ -86,12 +89,18 @@ export const complete: TCommand = {
 		typeof temperature === "number" && (request.temperature = temperature)
 
 		// On fait appel à OpenAI pour compléter le texte
-		const completion = await openAI.complete(request)
-		if (!completion || completion.choices.length === 0) {
+		const completion: IResult<CreateCompletionResponse> = await openAI.completeText(request)
+		if (completion.isError) {
 			await interaction.editReply("OpenAI failed to complete the text")
+			log(completion.error!.message)
 			return
 		}
-		const {choices, usage} = completion
+		if (completion.value!.choices.length === 0) {
+			await interaction.editReply("OpenAI failed to return at least one choice")
+			log(JSON.stringify(completion.value!))
+			return
+		}
+		const {choices, usage} = completion.value!
 		const choice: CreateCompletionResponseChoicesInner = choices[0]
 		const {text, finish_reason} = choice
 
@@ -114,4 +123,4 @@ Demandez moi une réponse plus courte ou autorisez moi à en dire plus via le pa
 ${JSON.stringify(choice)}`)
 		}
 	},
-}
+})

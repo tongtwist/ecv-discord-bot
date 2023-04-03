@@ -1,34 +1,46 @@
 import type {AxiosResponse} from "axios"
-import type {
-	OpenAIApi,
-	CreateChatCompletionRequest,
-	ChatCompletionRequestMessage,
-	CreateChatCompletionResponse,
-} from "openai"
-import {log} from "../log"
+import type {OpenAIApi, CreateChatCompletionRequest, CreateChatCompletionResponse} from "openai"
+import type {IResult} from "../Result.spec"
+import Result from "../Result"
+import type {TChatCompletionParams, IChatCompletion} from "./ChatCompletion.spec"
 
-export type TChatCompletionParams =
-	| (Partial<CreateChatCompletionRequest> & {messages: ChatCompletionRequestMessage[]})
-	| ChatCompletionRequestMessage[]
-
-export class ChatCompletion {
+export default class ChatCompletion implements IChatCompletion {
 	static readonly defaultRequest: Partial<CreateChatCompletionRequest> & {model: string} = {
 		model: "gpt-3.5-turbo",
 	}
 
-	private readonly _request: Partial<CreateChatCompletionRequest> & {messages: ChatCompletionRequestMessage[]}
-
-	constructor(private readonly _api: OpenAIApi, request: TChatCompletionParams) {
-		this._request = Array.isArray(request) ? {messages: request} : request
+	private constructor(private readonly _api: OpenAIApi, private readonly _request: CreateChatCompletionRequest) {
+		Object.freeze(this)
 	}
 
-	async execute(): Promise<CreateChatCompletionResponse | false> {
+	get api() {
+		return this._api
+	}
+	get request() {
+		return this._request
+	}
+
+	async execute(): Promise<IResult<CreateChatCompletionResponse>> {
 		const req: CreateChatCompletionRequest = {...ChatCompletion.defaultRequest, ...this._request}
-		const res: AxiosResponse<CreateChatCompletionResponse> = await this._api.createChatCompletion(req)
-		if (res.status !== 200) {
-			log(`OpenAI.createChatCompletion: unexpected status code: ${res.status}`)
-			return false
+		let res: AxiosResponse<CreateChatCompletionResponse>
+		try {
+			res = await this._api.createChatCompletion(req)
+		} catch (err) {
+			return Result.failIn("openai.ChatCompletion.execute", err as string | Error)
 		}
-		return res.data
+		if (res.status !== 200) {
+			return Result.failIn(
+				"openai.ChatCompletion.execute",
+				`OpenAI.createChatCompletion: unexpected status code: ${res.status}`,
+			)
+		}
+		return Result.success(res.data)
+	}
+
+	static create(api: OpenAIApi, params: TChatCompletionParams): IChatCompletion {
+		const request: CreateChatCompletionRequest = Array.isArray(params)
+			? {...ChatCompletion.defaultRequest, messages: params}
+			: {...ChatCompletion.defaultRequest, ...params}
+		return new ChatCompletion(api, request)
 	}
 }

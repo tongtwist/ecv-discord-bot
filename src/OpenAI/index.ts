@@ -1,7 +1,11 @@
 import {Configuration, OpenAIApi, CreateCompletionResponse, CreateChatCompletionResponse, Model} from "openai"
-import {ListModels} from "./ListModels"
-import {TCompletionParams, Completion} from "./Completion"
-import {TChatCompletionParams, ChatCompletion} from "./ChatCompletion"
+import type {IResult} from "../Result.spec"
+import type {IListModels} from "./ListModels.spec"
+import ListModels from "./ListModels"
+import type {ITextCompletion, TTextCompletionParams} from "./TextCompletion.spec"
+import TextCompletion from "./TextCompletion"
+import type {IChatCompletion, TChatCompletionParams} from "./ChatCompletion.spec"
+import ChatCompletion from "./ChatCompletion"
 
 export class OpenAI {
 	private _models: Model[] = []
@@ -17,20 +21,23 @@ export class OpenAI {
 
 	async listModels(): Promise<Model[]> {
 		if (this._models.length === 0) {
-			const req = new ListModels(this._api)
-			this._models = await req.execute()
+			const apiRequest: IListModels = ListModels.create(this._api)
+			const res: IResult<Model[]> = await apiRequest.execute()
+			if (res.isOk) {
+				this._models = res.value!
+			}
 		}
 		return this._models
 	}
 
-	async complete(params: TCompletionParams): Promise<CreateCompletionResponse | false> {
-		const req = new Completion(this._api, params)
-		return await req.execute()
+	async completeText(params: TTextCompletionParams): Promise<IResult<CreateCompletionResponse>> {
+		const apiRequest: ITextCompletion = TextCompletion.create(this._api, params)
+		return await apiRequest.execute()
 	}
 
-	async completeChat(params: TChatCompletionParams): Promise<CreateChatCompletionResponse | false> {
-		const req = new ChatCompletion(this._api, params)
-		return await req.execute()
+	async completeChat(params: TChatCompletionParams): Promise<IResult<CreateChatCompletionResponse>> {
+		const apiRequest: IChatCompletion = ChatCompletion.create(this._api, params)
+		return await apiRequest.execute()
 	}
 
 	static async fromConfig(path: string): Promise<OpenAI> {
