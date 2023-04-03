@@ -1,16 +1,35 @@
 import type {AxiosResponse} from "axios"
 import type {Model, OpenAIApi, ListModelsResponse} from "openai"
-import {log} from "../log"
+import type {IResult} from "../Result.spec"
+import Result from "../Result"
+import type {IListModels} from "./ListModels.spec"
 
-export class ListModels {
-	constructor(private readonly _api: OpenAIApi) {}
+export default class ListModels implements IListModels {
+	private constructor(private readonly _api: OpenAIApi) {
+		Object.freeze(this)
+	}
 
-	async execute(): Promise<Model[]> {
-		const res: AxiosResponse<ListModelsResponse> = await this._api.listModels()
-		if (res.status !== 200) {
-			log(`OpenAI.listModels: unexpected status code: ${res.status}`)
-			return []
+	get api() {
+		return this._api
+	}
+
+	async execute(): Promise<IResult<Model[]>> {
+		let res: AxiosResponse<ListModelsResponse>
+		try {
+			res = await this._api.listModels()
+		} catch (err) {
+			return Result.failIn("openai.ListModels.execute", err as string | Error)
 		}
-		return res.data.data
+		if (res.status !== 200) {
+			return Result.failIn(
+				"openai.ListModels.execute",
+				`OpenAI.listModels: unexpected status code: ${res.status}`,
+			)
+		}
+		return Result.success(res.data.data)
+	}
+
+	static create(api: OpenAIApi): ListModels {
+		return new ListModels(api)
 	}
 }

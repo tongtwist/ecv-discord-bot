@@ -2,9 +2,10 @@ import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js"
 import type {Model} from "openai"
 import type {OpenAI} from "../../../OpenAI"
 import type {Discobot} from "../../../Discobot"
-import type {TCommand} from "../command.spec"
+import type {ICommand} from "../../command.spec"
+import Command from "../../Command"
 
-export const listModels: TCommand = {
+export const listModels: ICommand = Command.fromConfig({
 	revision: 1,
 
 	data: new SlashCommandBuilder().setName("openai-models").setDescription("List OpenAI available models"),
@@ -35,4 +36,4 @@ export const listModels: TCommand = {
 			`OpenAI models actually are ${models.map((model: Model) => `"${model.id}"`).join(", ")}`,
 		)
 	},
-}
+})

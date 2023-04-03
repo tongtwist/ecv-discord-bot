@@ -1,8 +1,9 @@
 import {Events} from "discord.js"
-import type {TEvent} from "./event.spec"
 import type {Discobot} from "../index"
+import type {IEvent} from "../event.spec"
+import Event from "../Event"
 
-export const ready: TEvent = {
+export const ready: IEvent = Event.fromConfig({
 	name: Events.ClientReady,
 	once: true,
 	execute: async (bot: Discobot) => {
@@ -11,4 +12,4 @@ export const ready: TEvent = {
 			await bot.redeployCommands()
 		}
 	},
-}
+})

@@ -1,7 +1,8 @@
 import {ChatInputCommandInteraction, SlashCommandBuilder, SlashCommandStringOption} from "discord.js"
-import type {TCommand} from "./command.spec"
+import type {ICommand} from "../command.spec"
+import Command from "../Command"
 
-export const helloCommand: TCommand = {
+export const helloCommand: ICommand = Command.fromConfig({
 	revision: 1,
 
 	data: new SlashCommandBuilder()
@@ -9,10 +10,10 @@ export const helloCommand: TCommand = {
 		.setDescription("Replies to Hello")
 		.addStringOption((option: SlashCommandStringOption) =>
 			option.setName("name").setDescription("Your name").setRequired(false),
-		),
+		) as SlashCommandBuilder,
 
 	execute: async (interaction: ChatInputCommandInteraction): Promise<void> => {
 		const name: string | null = interaction.options.getString("name")
 		await interaction.reply(`Hello${name !== null ? ` ${name}` : ""} !`)
 	},
-}
+})

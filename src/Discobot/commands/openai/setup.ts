@@ -6,9 +6,10 @@ import {
 	User,
 } from "discord.js"
 import type {Discobot} from "../.."
-import type {TCommand} from "../command.spec"
+import type {ICommand} from "../../command.spec"
+import Command from "../../Command"
 
-export const setup: TCommand = {
+export const setup: ICommand = Command.fromConfig({
 	revision: 1,
 
 	data: new SlashCommandBuilder()
@@ -24,7 +25,7 @@ export const setup: TCommand = {
 				.setName("user")
 				.setDescription("The Discord user to associate with the OpenAI API key")
 				.setRequired(false),
-		),
+		) as SlashCommandBuilder,
 
 	execute: async (interaction: ChatInputCommandInteraction): Promise<void> => {
 		// Le traitement peut prendre du temps mais il faut répondre tout de suite à Discord.
@@ -63,4 +64,4 @@ export const setup: TCommand = {
 			: `Failed to configure ${userDesignation[0]}${userDesignation[1]} OpenAI API key to "${key}"`
 		await interaction.editReply(response)
 	},
-}
+})
