@@ -12,13 +12,15 @@ import {
 import {OpenAI} from "../OpenAI"
 import {log} from "../log"
 import type {ICommand} from "./command.spec"
+import type {IOpenAI} from "../OpenAI.spec"
+import type {IDiscobot} from "../Discobot.spec"
 
-export class Discobot extends Client {
+export class Discobot extends Client implements IDiscobot {
 	private static readonly _minCommandDeploymentAge = 1000 * 60 * 60 * 24
 
 	private _commands: Collection<string, ICommand>
-	commandsToRedeploy: ICommand[] = []
-	commandList: string[] = []
+	private _commandsToRedeploy: ICommand[] = []
+	private _commandList: string[] = []
 
 	private constructor(
 		private readonly _token: string,
@@ -27,7 +29,7 @@ export class Discobot extends Client {
 		private _lasICommandDeployment: number,
 		private _commandRevisions: {[name: string]: number},
 		private readonly _inviteUrl: string,
-		private readonly _openAIs: {[userId: string]: OpenAI},
+		private readonly _openAIs: {[userId: string]: IOpenAI},
 		private readonly _configPath: string,
 	) {
 		super({intents: [GatewayIntentBits.Guilds]})
@@ -54,7 +56,7 @@ export class Discobot extends Client {
 		await writeFile(this._configPath, JSON.stringify(config, null, 4))
 	}
 
-	private async _loadCommands(): Promise<[ICommand[], string[]]> {
+	private async _loadCommands(): Promise<void> {
 		// Charge la liste des objets commands
 		const {commands} = await import("./commands")
 		// Initialise quelques variables de gestion des redéploiements
@@ -73,8 +75,9 @@ export class Discobot extends Client {
 				commandsThatShouldBeDeployed.push(command)
 			}
 		}
-		// Renvoi les listes dont on a besoin par ailleur
-		return [commandsThatShouldBeDeployed, commandList]
+		// Enregistre les listes dont on a besoin par ailleur
+		this._commandsToRedeploy = commandsThatShouldBeDeployed
+		this._commandList = commandList
 	}
 
 	private async _handleCommands(): Promise<void> {
@@ -110,9 +113,13 @@ export class Discobot extends Client {
 	}
 
 	async redeployCommands(): Promise<void> {
+		// Si aucune commande n'est à redéployer, on ne fait rien
+		if (this._commandsToRedeploy.length === 0) {
+			return
+		}
 		log("Redeploying commands...")
 		// Crée un array d'objets JSON à passer à l'API Discord
-		const newCommands = this.commandsToRedeploy.map((command: ICommand) => command.data.toJSON())
+		const newCommands = this._commandsToRedeploy.map((command: ICommand) => command.data.toJSON())
 		// Instancie un client d'API REST Discord
 		const rest = new REST({version: "10"}).setToken(this._token)
 		// Dialogue avec l'API REST de Discord
@@ -122,7 +129,9 @@ export class Discobot extends Client {
 			log(`- Registered commands: ${commands.map((command: any) => command.name).join(", ")}`)
 			// Retire de ces commandes connues celles qui n'existent plus et celles à redéployer
 			commands = commands.filter((command: any) => {
-				return this.commandList.includes(command.name) && !newCommands.some((c: any) => c.name === command.name)
+				return (
+					this._commandList.includes(command.name) && !newCommands.some((c: any) => c.name === command.name)
+				)
 			})
 			log(`- Commands to keep: ${commands.map((command: any) => command.name).join(", ")}`)
 			// Ajoute à la liste des commandes à garder, celles à redéployer
@@ -140,25 +149,25 @@ export class Discobot extends Client {
 			log(`Successfully redeployed ${resRedeploy.length} application (/) commands.`)
 			// Crée le nouvel objet des révisions de commandes à enregistrer dans le fichier de config
 			const newCommandRevisions: {[name: string]: number} = {}
-			for (const command of this.commandsToRedeploy) {
+			for (const command of this._commandsToRedeploy) {
 				newCommandRevisions[command.data.name] = command.revision
 			}
 			this._commandRevisions = {...this._commandRevisions, ...newCommandRevisions}
 			// Enregistre la nouvelle configuration
 			await this._saveConfig()
 			// Nettoie la liste des commandes à redéployer
-			this.commandsToRedeploy = []
+			this._commandsToRedeploy = []
 		} catch (error) {
 			log(`Error while redeploying commands: ${error}`)
 		}
 	}
 
-	welcome() {
+	logWelcome() {
 		log("Here I am!")
 		log(`Do not forget to invite me on your prefered server using this URL: ${this._inviteUrl}`)
 	}
 
-	async openAI(userId: string, openAI?: OpenAI | string): Promise<OpenAI | undefined> {
+	async openAI(userId: string, openAI?: IOpenAI | string): Promise<IOpenAI | undefined> {
 		if (typeof openAI !== "undefined") {
 			this._openAIs[userId] = typeof openAI === "string" ? OpenAI.fromKey(openAI) : openAI
 			await this._saveConfig()
@@ -169,9 +178,7 @@ export class Discobot extends Client {
 
 	async start(): Promise<void> {
 		// Charge les commandes
-		const [commandsToRedeploy, commandList] = await this._loadCommands()
-		this.commandsToRedeploy = commandsToRedeploy
-		this.commandList = commandList
+		await this._loadCommands()
 		// Gère les commandes
 		await this._handleCommands()
 		// Charge et gère les évènements
@@ -180,7 +187,7 @@ export class Discobot extends Client {
 		await super.login(this._token)
 	}
 
-	static async fromConfig(path: string): Promise<Discobot> {
+	static async fromConfig(path: string): Promise<IDiscobot> {
 		const {token, inviteUrl, clientId, guildId, lasICommandDeployment, commandRevisions, openAIUserKeys} =
 			await require(path)
 		const openAIs: {[userId: string]: OpenAI} = {}

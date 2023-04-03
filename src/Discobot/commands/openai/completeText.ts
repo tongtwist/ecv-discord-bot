@@ -6,8 +6,8 @@ import {
 } from "discord.js"
 import type {CreateCompletionRequest, CreateCompletionResponse, CreateCompletionResponseChoicesInner} from "openai"
 import type {IResult} from "../../../Result.spec"
-import type {OpenAI} from "../../../OpenAI"
-import type {Discobot} from "../.."
+import type {IOpenAI} from "../../../OpenAI.spec"
+import type {IDiscobot} from "../../../Discobot.spec"
 import type {ICommand} from "../../command.spec"
 import Command from "../../Command"
 import {log} from "../../../log"
@@ -65,10 +65,10 @@ export const completeText: ICommand = Command.fromConfig({
 		await interaction.deferReply()
 
 		// On récupère le client Discord qui est en fait notre bot
-		const bot = interaction.client as Discobot
+		const bot = interaction.client as IDiscobot
 
 		// On récupère l'instance OpenAI associée à l'utilisateur qui a lancé la commande
-		const openAI: OpenAI | undefined = await bot.openAI(interaction.user.id)
+		const openAI: IOpenAI | undefined = await bot.openAI(interaction.user.id)
 
 		// Si l'utilisateur n'a pas de clé OpenAI, on ne peut pas lister les modèles
 		if (!openAI) {

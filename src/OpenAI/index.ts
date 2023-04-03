@@ -6,17 +6,15 @@ import type {ITextCompletion, TTextCompletionParams} from "./TextCompletion.spec
 import TextCompletion from "./TextCompletion"
 import type {IChatCompletion, TChatCompletionParams} from "./ChatCompletion.spec"
 import ChatCompletion from "./ChatCompletion"
+import type {IOpenAI} from "../OpenAI.spec"
 
-export class OpenAI {
+export class OpenAI implements IOpenAI {
 	private _models: Model[] = []
 
 	constructor(private readonly _key: string, private readonly _api: OpenAIApi) {}
 
 	get key(): string {
 		return this._key
-	}
-	get models(): Model[] {
-		return [...this._models]
 	}
 
 	async listModels(): Promise<Model[]> {
