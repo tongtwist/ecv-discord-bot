@@ -18,7 +18,7 @@ npm start
 ```
 Développement:
 ```sh
-npm run clean && npm run watch & npm run dev
+npm run clean:dist && npm run watch:src & npm run dev
 ```
 
 ## Pensez à configurer le bot

@@ -70,9 +70,16 @@ export const setup: ICommand = Command.fromConfig({
 
 		// Traite le cas de la clé par défaut pour un utilisateur
 		if (guild === null) {
-			// TODO: Gérer les clés par défaut pour les utilisateurs
-			await bot.setOpenAI(user.id, key)
-			await interaction.editReply("Not implemented yet")
+			// On stocke/supprime la clé OpenAI par défaut pour l'utilisateur
+			const res: IOpenAI | false = await bot.setOpenAI(user.id, key)
+
+			// On construit la réponse
+			const response = res
+				? `${userDesignation[0]}${userDesignation[1]} OpenAI API key is configured to: "${res.key}"`
+				: `${userDesignation[0]}${userDesignation[1]} has no configured default OpenAI API key`
+
+			// On répond et le stockage de la clé est terminé
+			await interaction.editReply(response)
 			return
 		}
 
