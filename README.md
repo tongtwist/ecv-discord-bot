@@ -26,7 +26,7 @@ Pour cela il suffit de créer un fichier `discobot.json` à la racine du dépôt
 
 ## Fonctionnalitées prévues
 Pour l'instant c'est un bot destiné à ne travailler que sur un serveur à la fois.
-- [ ] Rendre le bot "multi-serveurs"
+- [x] Rendre le bot "multi-serveurs"
 - [x] Réponds aux "hellos" que vous lui adressez par la commande `/hello`
 - [x] Récupéres et/ou configures la clé d'API OpenAI confiée par un utilisateur via la commande `/openai-setup` (Chaque utilisateur peut se générer dans OpenAI une clé d'API dédiée et la fournir ici, ce qui lui permettra de suivre précisemment la consommation OpenAI de ce bot)
 - [x] Listes les modèles OpenAI (ou "engines") actuellement proposé par l'API OpenAI
