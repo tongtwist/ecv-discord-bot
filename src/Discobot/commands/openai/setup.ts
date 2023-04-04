@@ -5,18 +5,18 @@ import {
 	SlashCommandUserOption,
 	User,
 } from "discord.js"
-import type {Discobot} from "../.."
+import type {Guild} from "discord.js"
+import type {IOpenAI} from "../../../OpenAI.spec"
+import type {IDiscobot} from "../../../Discobot.spec"
 import type {ICommand} from "../../command.spec"
 import Command from "../../Command"
 
 export const setup: ICommand = Command.fromConfig({
-	revision: 1,
+	revision: 2,
 
 	data: new SlashCommandBuilder()
 		.setName("openai-setup")
-		.setDescription(
-			"Retrieve and eventually store the OpenAI API key to use with a Discord user (yourself by default)",
-		)
+		.setDescription("Store or delete an OpenAI API key to use with a Discord user (yourself by default)")
 		.addStringOption((option: SlashCommandStringOption) =>
 			option.setName("key").setDescription("Your OpenAI API key").setRequired(false),
 		)
@@ -34,10 +34,10 @@ export const setup: ICommand = Command.fromConfig({
 		await interaction.deferReply({ephemeral: true})
 
 		// On récupère le client Discord qui est en fait notre bot
-		const bot = interaction.client as Discobot
+		const bot = interaction.client as IDiscobot
 
-		// On récupère la clé OpenAI éventuellement passée en paramètre
-		const key: string | null = interaction.options.getString("key")
+		// On récupère la guilde (aka serveur discord) sur lequel la commande a été lancée
+		const guild: Guild | null = interaction.guild
 
 		// On récupère l'utilisateur éventuellement passé en paramètre.
 		// Si aucun utilisateur n'est passé en paramètre, on prend l'utilisateur qui a lancé la commande.
@@ -47,21 +47,44 @@ export const setup: ICommand = Command.fromConfig({
 		const userDesignation: [string, string] =
 			user.id === interaction.user.id ? ["You", "r"] : [`${user.username}`, "'s"]
 
-		// Traite le cas d'une lecture de clé
+		// On récupère la clé OpenAI éventuellement passée en paramètre
+		const key: string | false = interaction.options.getString("key") || false
+
+		// Traite le cas d'une suppression de clé
 		if (key === null) {
-			const openAIKey: string | undefined = (await bot.openAI(user.id))?.key
-			const response = openAIKey
-				? `${userDesignation[0]}${userDesignation[1]} OpenAI API key is: "${openAIKey}"`
+			// On récupère l'instance OpenAI associée à l'utilisateur qui a lancé la commande
+			const openAI: IOpenAI | false = bot.getOpenAI(user.id, guild?.id || undefined)
+
+			// On construit la réponse
+			const response = openAI
+				? `${userDesignation[0]}${userDesignation[1]} OpenAI API key is: "${openAI.key}"`
 				: `${userDesignation[0]} do not have an openAI API key`
+
+			// On répond et la lecture de clé est terminée
 			await interaction.editReply(response)
 			return
 		}
 
-		// Traite le cas du stockage d'une nouvelle clé
-		const openAIKey: string | undefined = (await bot.openAI(user.id, key))?.key
-		const response = openAIKey
-			? `${userDesignation[0]}${userDesignation[1]} OpenAI API key is configured to: "${openAIKey}"`
-			: `Failed to configure ${userDesignation[0]}${userDesignation[1]} OpenAI API key to "${key}"`
-		await interaction.editReply(response)
+		// Traite le cas de la clé par défaut pour un utilisateur
+		if (guild === null) {
+			// TODO: Gérer les clés par défaut pour les utilisateurs
+			await bot.setOpenAI(user.id, key)
+			await interaction.editReply("Not implemented yet")
+			return
+		}
+
+		// Traite le cas de la clé pour un utilisateur sur un serveur
+		{
+			// On stocke/supprime la clé OpenAI pour l'utilisateur sur le serveur
+			const res: IOpenAI | false = await bot.setOpenAI(user.id, key, guild)
+
+			// On construit la réponse
+			const response = res
+				? `${userDesignation[0]}${userDesignation[1]} OpenAI API key is configured to: "${res.key}" on server "${guild.name}"`
+				: `${userDesignation[0]}${userDesignation[1]} has no configured OpenAI API key on server "${guild.name}"`
+
+			// On répond et le stockage de la clé est terminé
+			await interaction.editReply(response)
+		}
 	},
 })

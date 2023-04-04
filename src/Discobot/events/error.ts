@@ -1,7 +1,7 @@
 import {Events} from "discord.js"
 import type {IEvent} from "../event.spec"
 import Event from "../Event"
-import {log} from "../../log"
+import {log} from "../../utils/log"
 
 export const error: IEvent = Event.fromConfig({
 	name: Events.Error,

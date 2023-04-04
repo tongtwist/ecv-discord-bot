@@ -19,8 +19,14 @@ export const listModels: ICommand = Command.fromConfig({
 		// On récupère le client Discord qui est en fait notre bot
 		const bot = interaction.client as IDiscobot
 
+		// On récupère l'identifiant du serveur sur lequel la commande a été lancée
+		const serverId: string | null = interaction.guildId
+
+		// On récupère l'identifiant du user qui a lancé la commande
+		const userId: string = interaction.user.id
+
 		// On récupère l'instance OpenAI associée à l'utilisateur qui a lancé la commande
-		const openAI: IOpenAI | undefined = await bot.openAI(interaction.user.id)
+		const openAI: IOpenAI | false = bot.getOpenAI(userId, serverId || undefined)
 
 		// Si l'utilisateur n'a pas de clé OpenAI, on ne peut pas lister les modèles
 		if (!openAI) {

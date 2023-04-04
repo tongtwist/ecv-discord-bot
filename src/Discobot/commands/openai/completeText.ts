@@ -5,12 +5,12 @@ import {
 	SlashCommandNumberOption,
 } from "discord.js"
 import type {CreateCompletionRequest, CreateCompletionResponse, CreateCompletionResponseChoicesInner} from "openai"
-import type {IResult} from "../../../Result.spec"
+import type {IResult} from "../../../utils/Result.spec"
 import type {IOpenAI} from "../../../OpenAI.spec"
 import type {IDiscobot} from "../../../Discobot.spec"
 import type {ICommand} from "../../command.spec"
 import Command from "../../Command"
-import {log} from "../../../log"
+import {log} from "../../../utils/log"
 
 export const completeText: ICommand = Command.fromConfig({
 	revision: 4,
@@ -67,8 +67,14 @@ export const completeText: ICommand = Command.fromConfig({
 		// On récupère le client Discord qui est en fait notre bot
 		const bot = interaction.client as IDiscobot
 
+		// On récupère l'identifiant du serveur sur lequel la commande a été lancée
+		const serverId: string | null = interaction.guildId
+
+		// On récupère l'identifiant du user qui a lancé la commande
+		const userId: string = interaction.user.id
+
 		// On récupère l'instance OpenAI associée à l'utilisateur qui a lancé la commande
-		const openAI: IOpenAI | undefined = await bot.openAI(interaction.user.id)
+		const openAI: IOpenAI | false = bot.getOpenAI(userId, serverId || undefined)
 
 		// Si l'utilisateur n'a pas de clé OpenAI, on ne peut pas lister les modèles
 		if (!openAI) {
@@ -96,7 +102,7 @@ export const completeText: ICommand = Command.fromConfig({
 			return
 		}
 		if (completion.value!.choices.length === 0) {
-			await interaction.editReply("OpenAI failed to return at least one choice")
+			await interaction.editReply("OpenAI failed to return at least one completion choice")
 			log(JSON.stringify(completion.value!))
 			return
 		}

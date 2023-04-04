@@ -1,7 +1,7 @@
 import type {AxiosResponse} from "axios"
 import type {OpenAIApi, CreateCompletionRequest, CreateCompletionResponse} from "openai"
-import type {IResult} from "../Result.spec"
-import Result from "../Result"
+import type {IResult} from "../utils/Result.spec"
+import Result from "../utils/Result"
 import type {TTextCompletionParams, ITextCompletion} from "./TextCompletion.spec"
 
 export default class TextCompletion implements ITextCompletion {

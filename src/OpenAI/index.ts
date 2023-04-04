@@ -1,5 +1,5 @@
 import {Configuration, OpenAIApi, CreateCompletionResponse, CreateChatCompletionResponse, Model} from "openai"
-import type {IResult} from "../Result.spec"
+import type {IResult} from "../utils/Result.spec"
 import type {IListModels} from "./ListModels.spec"
 import ListModels from "./ListModels"
 import type {ITextCompletion, TTextCompletionParams} from "./TextCompletion.spec"
@@ -8,7 +8,7 @@ import type {IChatCompletion, TChatCompletionParams} from "./ChatCompletion.spec
 import ChatCompletion from "./ChatCompletion"
 import type {IOpenAI} from "../OpenAI.spec"
 
-export class OpenAI implements IOpenAI {
+export default class OpenAI implements IOpenAI {
 	private _models: Model[] = []
 
 	constructor(private readonly _key: string, private readonly _api: OpenAIApi) {}
