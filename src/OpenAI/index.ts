@@ -1,5 +1,6 @@
 import {Configuration, OpenAIApi, CreateCompletionResponse, CreateChatCompletionResponse, Model} from "openai"
 import type {IResult} from "../utils/Result.spec"
+import Result from "../utils/Result"
 import type {IListModels} from "./ListModels.spec"
 import ListModels from "./ListModels"
 import type {ITextCompletion, TTextCompletionParams} from "./TextCompletion.spec"
@@ -21,8 +22,8 @@ export default class OpenAI implements IOpenAI {
 		if (this._models.length === 0) {
 			const apiRequest: IListModels = ListModels.create(this._api)
 			const res: IResult<Model[]> = await apiRequest.execute()
-			if (res.isOk) {
-				this._models = res.value!
+			if (Result.isOk(res)) {
+				this._models = res.value
 			}
 		}
 		return this._models
