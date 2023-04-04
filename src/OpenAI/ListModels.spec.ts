@@ -1,5 +1,5 @@
 import type {Model, OpenAIApi} from "openai"
-import type {IResult} from "../Result.spec"
+import type {IResult} from "../utils/Result.spec"
 
 /**
  * Spécification de forme

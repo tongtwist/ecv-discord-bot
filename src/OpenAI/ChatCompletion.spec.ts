@@ -4,7 +4,7 @@ import type {
 	ChatCompletionRequestMessage,
 	CreateChatCompletionResponse,
 } from "openai"
-import type {IResult} from "../Result.spec"
+import type {IResult} from "../utils/Result.spec"
 
 /**
  * Spécifications de forme

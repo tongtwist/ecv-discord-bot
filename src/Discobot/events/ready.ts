@@ -7,7 +7,8 @@ export const ready: IEvent = Event.fromConfig({
 	name: Events.ClientReady,
 	once: true,
 	execute: async (bot: IDiscobot) => {
-		bot.logWelcome()
 		await bot.redeployCommands()
+		await bot.populateServers()
+		bot.logWelcome()
 	},
 })

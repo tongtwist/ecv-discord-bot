@@ -1,8 +1,8 @@
 import process from "node:process"
 import path from "node:path"
-import {log} from "./log"
+import {log} from "./utils/log"
 import type {IDiscobot} from "./Discobot.spec"
-import {Discobot} from "./Discobot"
+import Discobot from "./Discobot"
 
 async function main() {
 	log("Loading...")

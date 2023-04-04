@@ -8,50 +8,61 @@ import {
 	GatewayIntentBits,
 	REST,
 	Routes,
+	Guild,
 } from "discord.js"
-import {OpenAI} from "../OpenAI"
-import {log} from "../log"
+import {log} from "../utils/log"
+import type {TJSONObject} from "../utils/JSON.spec"
 import type {ICommand} from "./command.spec"
 import type {IOpenAI} from "../OpenAI.spec"
+import type {TConfig as TServerConfig, IServer} from "./Server.spec"
+import Server from "./Server"
 import type {IDiscobot} from "../Discobot.spec"
 
-export class Discobot extends Client implements IDiscobot {
-	private static readonly _minCommandDeploymentAge = 1000 * 60 * 60 * 24
+export default class Discobot extends Client implements IDiscobot {
+	private static readonly _minCommandDeploymentAge = 1000 * 60 * 60 * 24 // Global - Gestionnaire de redeploiement des commandes
 
-	private _commands: Collection<string, ICommand>
-	private _commandsToRedeploy: ICommand[] = []
-	private _commandList: string[] = []
+	private _commands: Collection<string, ICommand> // Global
+	private _commandsToRedeploy: ICommand[] // Global - Gestionnaire de redeploiement des commandes
+	private _commandList: string[] // Global - Gestionnaire de redeploiement des commandes
 
 	private constructor(
-		private readonly _token: string,
-		private readonly _clientId: string,
-		private readonly _guildId: string,
-		private _lasICommandDeployment: number,
-		private _commandRevisions: {[name: string]: number},
-		private readonly _inviteUrl: string,
-		private readonly _openAIs: {[userId: string]: IOpenAI},
-		private readonly _configPath: string,
+		private readonly _token: string, // Global
+		private readonly _clientId: string, // Global
+		private _lastICommandDeployment: number, // Global - Gestionnaire de redeploiement des commandes
+		private _commandRevisions: {[name: string]: number}, // Global - Gestionnaire de redeploiement des commandes
+		private readonly _inviteUrl: string, // Global
+		private readonly _servers: Map<string, IServer>, // Global
+		private readonly _configPath: string, // Global
 	) {
 		super({intents: [GatewayIntentBits.Guilds]})
 		this._commands = new Collection()
+		this._commandsToRedeploy = []
+		this._commandList = []
 	}
 
-	private async _saveConfig(): Promise<void> {
-		// Crée l'objet de stockage des clés OpenAI
-		const openAIUserKeys: {[userId: string]: string} = {}
-		for (const [userId, openAI] of Object.entries(this._openAIs)) {
-			openAIUserKeys[userId] = openAI.key
+	private _configToJSON(): TJSONObject {
+		// Crée l'objet de stockage des serveurs
+		const servers: TJSONObject[] = []
+		for (const [serverId, server] of this._servers) {
+			servers.push(server.toJSON())
 		}
+		// Crée l'objet de stockage des users
+		const users: TJSONObject[] = []
 		// Crée le nouvel objet de configuration
-		const config = {
+		return {
 			token: this._token,
 			inviteUrl: this._inviteUrl,
 			clientId: this._clientId,
-			guildId: this._guildId,
 			lasICommandDeployment: Date.now(),
 			commandRevisions: this._commandRevisions,
-			openAIUserKeys,
+			servers,
+			users,
 		}
+	}
+
+	private async _saveConfig(): Promise<void> {
+		// Crée un objet JSON à partir de la configuration actuelle
+		const config = this._configToJSON()
 		// Enregistre la nouvelle configuration dans le fichier désigné par this._configPath
 		await writeFile(this._configPath, JSON.stringify(config, null, 4))
 	}
@@ -61,7 +72,7 @@ export class Discobot extends Client implements IDiscobot {
 		const {commands} = await import("./commands")
 		// Initialise quelques variables de gestion des redéploiements
 		const now = Date.now()
-		const lastDeplAge = now - this._lasICommandDeployment
+		const lastDeplAge = now - this._lastICommandDeployment
 		const commandList: string[] = []
 		const commandsThatShouldBeDeployed: ICommand[] = []
 		// Enregistre les commandes dans le bot
@@ -125,7 +136,7 @@ export class Discobot extends Client implements IDiscobot {
 		// Dialogue avec l'API REST de Discord
 		try {
 			// Récupère et affiche la liste des commandes connues de l'API de Discord
-			let commands = (await rest.get(Routes.applicationGuildCommands(this._clientId, this._guildId))) as any[]
+			let commands = (await rest.get(Routes.applicationCommands(this._clientId))) as any[]
 			log(`- Registered commands: ${commands.map((command: any) => command.name).join(", ")}`)
 			// Retire de ces commandes connues celles qui n'existent plus et celles à redéployer
 			commands = commands.filter((command: any) => {
@@ -143,7 +154,7 @@ export class Discobot extends Client implements IDiscobot {
 				return
 			}
 			// Redéploiement des commandes sur l'API de Discord
-			const resRedeploy = (await rest.put(Routes.applicationGuildCommands(this._clientId, this._guildId), {
+			const resRedeploy = (await rest.put(Routes.applicationCommands(this._clientId), {
 				body: commands,
 			})) as any[]
 			log(`Successfully redeployed ${resRedeploy.length} application (/) commands.`)
@@ -162,18 +173,16 @@ export class Discobot extends Client implements IDiscobot {
 		}
 	}
 
+	async populateServers(): Promise<void> {
+		const existingServers: Record<string, Guild> = {}
+		for (const [serverId, guild] of this.guilds.cache) {
+			existingServers[serverId] = guild
+		}
+	}
+
 	logWelcome() {
 		log("Here I am!")
 		log(`Do not forget to invite me on your prefered server using this URL: ${this._inviteUrl}`)
-	}
-
-	async openAI(userId: string, openAI?: IOpenAI | string): Promise<IOpenAI | undefined> {
-		if (typeof openAI !== "undefined") {
-			this._openAIs[userId] = typeof openAI === "string" ? OpenAI.fromKey(openAI) : openAI
-			await this._saveConfig()
-		}
-		const ret = this._openAIs[userId]
-		return ret
 	}
 
 	async start(): Promise<void> {
@@ -187,13 +196,55 @@ export class Discobot extends Client implements IDiscobot {
 		await super.login(this._token)
 	}
 
-	static async fromConfig(path: string): Promise<IDiscobot> {
-		const {token, inviteUrl, clientId, guildId, lasICommandDeployment, commandRevisions, openAIUserKeys} =
-			await require(path)
-		const openAIs: {[userId: string]: OpenAI} = {}
-		for (const userId in openAIUserKeys) {
-			openAIs[userId] = OpenAI.fromKey(openAIUserKeys[userId])
+	getOpenAI(userId: string, serverId?: string | undefined): false | IOpenAI {
+		let res: IOpenAI | false = false
+		if (serverId) {
+			res = this._servers.get(serverId)?.openAI(userId) ?? false
+		} else {
+			// TODO: Gérer le cas où on n'a pas de serveur, mais où on a peut-être une valeur par défaut pour l'utilisateur
 		}
-		return new Discobot(token, clientId, guildId, lasICommandDeployment, commandRevisions, inviteUrl, openAIs, path)
+		return res
+	}
+
+	async setOpenAI(userId: string, openAI: string | false | IOpenAI, s?: string | Guild): Promise<false | IOpenAI> {
+		if (!s) {
+			// TODO: Gérer l'enregistrement d'une clé de d'API OpenAI par défaut pour un utilisateur
+			return Promise.resolve(false)
+		}
+		const server = await this.getOrCreateServer(s)
+		const res = server.openAI(userId, openAI)
+		await this._saveConfig()
+		return res
+	}
+
+	async getOrCreateServer(s: string | Guild): Promise<IServer> {
+		const serverId = typeof s === "string" ? s : s.id
+		if (this._servers.has(serverId)) {
+			return this._servers.get(serverId)!
+		}
+		const server = typeof s === "string" ? Server.create({id: serverId, openAIAPIKeys: {}}) : Server.fromGuild(s)
+		this._servers.set(serverId, server)
+		await this._saveConfig()
+		return server
+	}
+
+	static async fromConfig(path: string): Promise<IDiscobot> {
+		const cfg = await require(path)
+		const srvs: Map<string, IServer> = new Map()
+		cfg.servers.forEach((serverConfig: TServerConfig) => {
+			const resSrv = Server.fromJSON(serverConfig)
+			if (resSrv.isSuccess) {
+				srvs.set(serverConfig.id, resSrv.value!)
+			}
+		})
+		return new Discobot(
+			cfg.token,
+			cfg.clientId,
+			cfg.lasICommandDeployment,
+			cfg.commandRevisions,
+			cfg.inviteUrl,
+			srvs,
+			path,
+		)
 	}
 }
