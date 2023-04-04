@@ -3,6 +3,9 @@ import type {IDiscobot} from "../../Discobot.spec"
 import type {IEvent} from "../event.spec"
 import Event from "../Event"
 
+/**
+ * Un événement de connection à Discord prête
+ */
 export const ready: IEvent = Event.fromConfig({
 	name: Events.ClientReady,
 	once: true,

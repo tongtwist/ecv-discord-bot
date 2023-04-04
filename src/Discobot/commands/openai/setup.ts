@@ -11,6 +11,9 @@ import type {IDiscobot} from "../../../Discobot.spec"
 import type {ICommand} from "../../command.spec"
 import Command from "../../Command"
 
+/**
+ * La commande permettant de gérer les clés d'API OpenAI associées aux utilisateurs
+ */
 export const setup: ICommand = Command.fromConfig({
 	revision: 2,
 

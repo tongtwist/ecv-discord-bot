@@ -13,6 +13,9 @@ import type {ICommand} from "../../command.spec"
 import Command from "../../Command"
 import {log} from "../../../utils/log"
 
+/**
+ * La commande permettant de demander à OpenAI de compléter un texte
+ */
 export const completeText: ICommand = Command.fromConfig({
 	revision: 4,
 

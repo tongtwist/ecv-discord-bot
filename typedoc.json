@@ -1,0 +1,14 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+    "name": "ECV Discord Bot",
+	"cleanOutputDir": true,
+	"entryPoints": ["src"],
+    "entryPointStrategy": "resolve",
+    "sort": ["source-order"],
+    "media": "media",
+	"readme": "README.md",
+    "categorizeByGroup": false,
+    "navigationLinks": {
+        "GitHub": "https://github.com/tongtwist/ecv-discord-bot"
+    }
+}

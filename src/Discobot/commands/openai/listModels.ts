@@ -5,6 +5,9 @@ import type {IDiscobot} from "../../../Discobot.spec"
 import type {ICommand} from "../../command.spec"
 import Command from "../../Command"
 
+/**
+ * La commande permettant de lister les modèles disponibles sur OpenAI
+ */
 export const listModels: ICommand = Command.fromConfig({
 	revision: 1,
 
