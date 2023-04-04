@@ -6,6 +6,7 @@ import {
 } from "discord.js"
 import type {CreateCompletionRequest, CreateCompletionResponse, CreateCompletionResponseChoicesInner} from "openai"
 import type {IResult} from "../../../utils/Result.spec"
+import Result from "../../../utils/Result"
 import type {IOpenAI} from "../../../OpenAI.spec"
 import type {IDiscobot} from "../../../Discobot.spec"
 import type {ICommand} from "../../command.spec"
@@ -96,12 +97,12 @@ export const completeText: ICommand = Command.fromConfig({
 
 		// On fait appel à OpenAI pour compléter le texte
 		const completion: IResult<CreateCompletionResponse> = await openAI.completeText(request)
-		if (completion.isError) {
+		if (Result.isError(completion)) {
 			await interaction.editReply("OpenAI failed to complete the text")
-			log(completion.error!.message)
+			log(completion.error.message)
 			return
 		}
-		if (completion.value!.choices.length === 0) {
+		if (completion.value.choices.length === 0) {
 			await interaction.editReply("OpenAI failed to return at least one completion choice")
 			log(JSON.stringify(completion.value!))
 			return

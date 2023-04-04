@@ -11,6 +11,7 @@ import {
 	Guild,
 } from "discord.js"
 import {log} from "../utils/log"
+import Result from "../utils/Result"
 import type {TJSONObject} from "../utils/JSON.spec"
 import type {ICommand} from "./command.spec"
 import type {IOpenAI} from "../OpenAI.spec"
@@ -233,8 +234,8 @@ export default class Discobot extends Client implements IDiscobot {
 		const srvs: Map<string, IServer> = new Map()
 		cfg.servers.forEach((serverConfig: TServerConfig) => {
 			const resSrv = Server.fromJSON(serverConfig)
-			if (resSrv.isSuccess) {
-				srvs.set(serverConfig.id, resSrv.value!)
+			if (Result.isSuccess(resSrv)) {
+				srvs.set(serverConfig.id, resSrv.value)
 			}
 		})
 		return new Discobot(

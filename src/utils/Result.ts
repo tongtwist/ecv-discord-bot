@@ -1,49 +1,68 @@
-import type {IResult} from "./Result.spec"
+import type {IResult, ISuccessResult, IFailureResult} from "./Result.spec"
 
-export default class Result<R = unknown> implements IResult<R> {
-	private readonly _error?: Error
-	private readonly _value?: R
-	private readonly _ok: boolean
+export class SuccessResult<R = unknown> implements ISuccessResult<R> {
+	readonly isOk = true
+	readonly isSuccess = true
+	readonly isError = false
+	readonly isFailure = false
 
-	private constructor(v?: R, e?: Error | string) {
-		this._ok = typeof e === "undefined" && typeof v !== "undefined"
-		if (this._ok) {
-			this._value = v
-		} else {
-			this._error = typeof e === "string" ? new Error(e) : e
-		}
+	private constructor(private readonly _value: R) {
 		Object.freeze(this)
 	}
 
-	get error(): Error | undefined {
-		return this._error
-	}
-	get value(): R | undefined {
+	get value(): R {
 		return this._value
 	}
-	get isOk(): boolean {
-		return this._ok
+
+	static of<R>(value: R): ISuccessResult<R> {
+		return new SuccessResult(value)
 	}
-	get isSuccess(): boolean {
-		return this._ok
-	}
-	get isError(): boolean {
-		return !this._ok
-	}
-	get isFailure(): boolean {
-		return !this._ok
+}
+
+export class ErrorResult implements IFailureResult {
+	readonly isOk = false
+	readonly isSuccess = false
+	readonly isError = true
+	readonly isFailure = true
+
+	private constructor(private readonly _error: Error) {
+		Object.freeze(this)
 	}
 
-	static success<R>(value: R): Result<R> {
-		return new Result<R>(value)
+	get error(): Error {
+		return this._error
 	}
 
-	static fail<R = unknown>(err: string | Error): Result<R> {
-		return new Result<R>(undefined, err)
+	static of(err: string | Error): IFailureResult {
+		return new ErrorResult(typeof err === "string" ? new Error(err) : err)
+	}
+}
+
+export default class Result {
+	static isOk<R>(r: IResult<R>): r is ISuccessResult<R> {
+		return r.isOk
+	}
+	static isSuccess<R>(r: IResult<R>): r is ISuccessResult<R> {
+		return r.isOk
 	}
 
-	static failIn<R = unknown>(where: string, err: string | Error): Result<R> {
+	static isError<R>(r: IResult<R>): r is IFailureResult {
+		return r.isError
+	}
+	static isFailure<R>(r: IResult<R>): r is IFailureResult {
+		return r.isError
+	}
+
+	static success<R>(value: R): IResult<R> {
+		return SuccessResult.of<R>(value)
+	}
+
+	static fail<R = unknown>(err: string | Error): IResult<R> {
+		return ErrorResult.of(err)
+	}
+
+	static failIn<R = unknown>(where: string, err: string | Error): IResult<R> {
 		const msg = typeof err === "string" ? err : err.message
-		return Result.fail(`${where}: ${msg}`)
+		return ErrorResult.of(`${where}: ${msg}`)
 	}
 }
