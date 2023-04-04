@@ -2,6 +2,9 @@ import {ChatInputCommandInteraction, SlashCommandBuilder, SlashCommandStringOpti
 import type {ICommand} from "../command.spec"
 import Command from "../Command"
 
+/**
+ * La commande "hello" qui répond "Hello" à l'utilisateur
+ */
 export const helloCommand: ICommand = Command.fromConfig({
 	revision: 1,
 

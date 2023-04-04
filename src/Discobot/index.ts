@@ -249,3 +249,12 @@ export default class Discobot extends Client implements IDiscobot {
 		)
 	}
 }
+
+export type {TCreationProperties as TCommandCreationProperties, ICommand} from "./command.spec"
+export type {TCreationProperties as TEventCreationProperties, IEvent} from "./event.spec"
+export type * from "./Server.spec"
+export * from "./Event"
+export * from "./Command"
+export * from "./Server"
+export * from "./events"
+export * from "./commands"

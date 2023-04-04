@@ -1,7 +1,7 @@
 # ecv-discord-bot
 
 <div style="text-align: center">
-<img src="./assets/discobot.png" width="300px" height="300px" alt="discobot"/><br/>
+<img src="media/discobot.png" width="300px" height="300px" alt="discobot"/><br/>
 <i>A disco(rd )bot image generated with this disco(rd )bot</i>
 </div>
 
@@ -58,3 +58,6 @@ Les futures fonctionnalitées "*DIY/On-premise*" risquent de nécessiter beaucou
 - Générer des modèles 3D utilisables dans
   - Three.js
   - Blender
+
+# Documentation
+La documentation technique peut être trouvée [ici](https://tongtwist.github.com/ecv-discord-bot/).

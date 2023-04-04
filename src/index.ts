@@ -11,3 +11,9 @@ async function main() {
 	await bot.start()
 }
 main()
+
+export * from "./utils"
+export * from "./Discobot"
+export * from "./OpenAI"
+export type * from "./Discobot.spec"
+export type * from "./OpenAI.spec"
