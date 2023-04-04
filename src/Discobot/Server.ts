@@ -5,17 +5,19 @@ import Result from "../utils/Result"
 import type {IOpenAI} from "../OpenAI.spec"
 import OpenAI from "../OpenAI"
 import type {TJSONObject} from "../utils/JSON.spec"
+import type {TConfig as TUserConfig, IUser} from "./User.spec"
+import User from "./User"
 import type {TConfig, IServer} from "./Server.spec"
 
 export default class Server implements IServer {
 	static readonly configSchema = z.object({
 		id: z.string().nonempty(),
-		openAIAPIKeys: z.record(z.string().nonempty()),
+		users: z.array(User.configSchema),
 	})
 
 	private constructor(
 		private readonly _id: string,
-		private readonly _openAIs: Map<string, IOpenAI>,
+		private readonly _users: Map<string, IUser>,
 		private _guild?: Guild,
 	) {}
 
@@ -36,22 +38,22 @@ export default class Server implements IServer {
 	}
 
 	toJSON(): TJSONObject {
-		const openAIAPIKeys: TJSONObject = {}
-		for (const [userId, openAI] of this._openAIs) {
-			openAIAPIKeys[userId] = openAI.key
+		const users: TJSONObject[] = []
+		for (const user of this._users.values()) {
+			users.push(user.toJSON())
 		}
-		return {id: this._id, openAIAPIKeys}
+		return {id: this._id, users}
 	}
 
 	openAI(userId: string, oai?: string | IOpenAI | false): IOpenAI | false {
 		if (typeof oai !== "undefined") {
 			if (oai) {
-				this._openAIs.set(userId, typeof oai === "string" ? OpenAI.fromKey(oai) : oai)
+				this._users.set(userId, User.fromId(userId, oai))
 			} else {
-				this._openAIs.delete(userId)
+				this._users.delete(userId)
 			}
 		}
-		return this._openAIs.get(userId) ?? false
+		return this._users.get(userId)?.openAI ?? false
 	}
 
 	static validateConfig(j: TJSONObject): j is TConfig {
@@ -59,11 +61,9 @@ export default class Server implements IServer {
 	}
 
 	static create(cfg: TConfig): IServer {
-		const openAIs = new Map<string, IOpenAI>()
-		for (const userId in cfg.openAIAPIKeys) {
-			openAIs.set(userId, OpenAI.fromKey(cfg.openAIAPIKeys[userId]))
-		}
-		return new Server(cfg.id, openAIs)
+		const users = new Map<string, IUser>()
+		cfg.users.forEach((u: TUserConfig) => users.set(u.id, User.create(u)))
+		return new Server(cfg.id, users)
 	}
 
 	static fromJSON(j: TJSONObject): IResult<IServer> {

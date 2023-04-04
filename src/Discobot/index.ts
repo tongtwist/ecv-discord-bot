@@ -9,12 +9,16 @@ import {
 	REST,
 	Routes,
 	Guild,
+	User as DiscordUser,
 } from "discord.js"
 import {log} from "../utils/log"
 import Result from "../utils/Result"
 import type {TJSONObject} from "../utils/JSON.spec"
 import type {ICommand} from "./command.spec"
 import type {IOpenAI} from "../OpenAI.spec"
+import OpenAI from "../OpenAI"
+import type {TConfig as TUserConfig, IUser} from "./User.spec"
+import User from "./User"
 import type {TConfig as TServerConfig, IServer} from "./Server.spec"
 import Server from "./Server"
 import type {IDiscobot} from "../Discobot.spec"
@@ -33,6 +37,7 @@ export default class Discobot extends Client implements IDiscobot {
 		private _commandRevisions: {[name: string]: number}, // Global - Gestionnaire de redeploiement des commandes
 		private readonly _inviteUrl: string, // Global
 		private readonly _servers: Map<string, IServer>, // Global
+		private readonly _users: Map<string, IUser>, // Global
 		private readonly _configPath: string, // Global
 	) {
 		super({intents: [GatewayIntentBits.Guilds]})
@@ -49,6 +54,9 @@ export default class Discobot extends Client implements IDiscobot {
 		}
 		// Crée l'objet de stockage des users
 		const users: TJSONObject[] = []
+		for (const [userId, user] of this._users) {
+			users.push(user.toJSON())
+		}
 		// Crée le nouvel objet de configuration
 		return {
 			token: this._token,
@@ -202,15 +210,30 @@ export default class Discobot extends Client implements IDiscobot {
 		if (serverId) {
 			res = this._servers.get(serverId)?.openAI(userId) ?? false
 		} else {
-			// TODO: Gérer le cas où on n'a pas de serveur, mais où on a peut-être une valeur par défaut pour l'utilisateur
+			res = this._users.get(userId)?.openAI ?? false
 		}
 		return res
 	}
 
 	async setOpenAI(userId: string, openAI: string | false | IOpenAI, s?: string | Guild): Promise<false | IOpenAI> {
 		if (!s) {
-			// TODO: Gérer l'enregistrement d'une clé de d'API OpenAI par défaut pour un utilisateur
-			return Promise.resolve(false)
+			if (openAI === false) {
+				if (this._users.has(userId)) {
+					this._users.delete(userId)
+				}
+				return false
+			} else {
+				const newKey = typeof openAI === "string" ? openAI : openAI.key
+				const user: IUser | undefined = this._users.get(userId)
+				if (!user || user.openAI.key !== newKey) {
+					this._users.set(
+						userId,
+						User.create({id: userId, openAI: typeof openAI === "string" ? openAI : newKey}),
+					)
+					await this._saveConfig()
+				}
+				return this._users.get(userId)!.openAI
+			}
 		}
 		const server = await this.getOrCreateServer(s)
 		const res = server.openAI(userId, openAI)
@@ -223,7 +246,7 @@ export default class Discobot extends Client implements IDiscobot {
 		if (this._servers.has(serverId)) {
 			return this._servers.get(serverId)!
 		}
-		const server = typeof s === "string" ? Server.create({id: serverId, openAIAPIKeys: {}}) : Server.fromGuild(s)
+		const server = typeof s === "string" ? Server.create({id: serverId, users: []}) : Server.fromGuild(s)
 		this._servers.set(serverId, server)
 		await this._saveConfig()
 		return server
@@ -231,6 +254,13 @@ export default class Discobot extends Client implements IDiscobot {
 
 	static async fromConfig(path: string): Promise<IDiscobot> {
 		const cfg = await require(path)
+		const users: Map<string, IUser> = new Map()
+		cfg.users.forEach((userConfig: TUserConfig) => {
+			const resUser = User.fromJSON(userConfig)
+			if (Result.isSuccess(resUser)) {
+				users.set(userConfig.id, resUser.value)
+			}
+		})
 		const srvs: Map<string, IServer> = new Map()
 		cfg.servers.forEach((serverConfig: TServerConfig) => {
 			const resSrv = Server.fromJSON(serverConfig)
@@ -245,6 +275,7 @@ export default class Discobot extends Client implements IDiscobot {
 			cfg.commandRevisions,
 			cfg.inviteUrl,
 			srvs,
+			users,
 			path,
 		)
 	}
