@@ -60,4 +60,4 @@ Les futures fonctionnalitées "*DIY/On-premise*" risquent de nécessiter beaucou
   - Blender
 
 # Documentation
-La documentation technique peut être trouvée [ici](https://tongtwist.github.com/ecv-discord-bot/).
+La documentation technique peut être trouvée [ici](https://tongtwist.github.io/ecv-discord-bot/).
