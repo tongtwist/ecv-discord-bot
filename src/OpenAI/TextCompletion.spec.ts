@@ -1,5 +1,5 @@
 import type {OpenAIApi, CreateCompletionRequest, CreateCompletionResponse} from "openai"
-import type {IResult} from "../utils/Result.spec"
+import type {IResult} from "@tongtwist/result-js"
 
 /**
  * Spécifications de forme

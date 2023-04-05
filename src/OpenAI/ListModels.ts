@@ -1,7 +1,6 @@
 import type {AxiosResponse} from "axios"
 import type {Model, OpenAIApi, ListModelsResponse} from "openai"
-import type {IResult} from "../utils/Result.spec"
-import Result from "../utils/Result"
+import {IResult, Result} from "@tongtwist/result-js"
 import type {IListModels} from "./ListModels.spec"
 
 export default class ListModels implements IListModels {

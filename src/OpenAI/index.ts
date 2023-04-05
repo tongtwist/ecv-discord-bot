@@ -1,6 +1,5 @@
 import {Configuration, OpenAIApi, CreateCompletionResponse, CreateChatCompletionResponse, Model} from "openai"
-import type {IResult} from "../utils/Result.spec"
-import Result from "../utils/Result"
+import {IResult, Result} from "@tongtwist/result-js"
 import type {IListModels} from "./ListModels.spec"
 import ListModels from "./ListModels"
 import type {ITextCompletion, TTextCompletionParams} from "./TextCompletion.spec"
