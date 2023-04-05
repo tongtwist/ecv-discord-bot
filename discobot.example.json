@@ -2,8 +2,10 @@
     "token": "<VOTRE TOKEN DE BOT DISCORD>",
     "inviteUrl": "<VOTRE URL D'INVITATION DE BOT DISCORD>",
     "clientId": "<L'APPLICATION ID DE VOTRE BOT DISCORD>",
-    "lastCommandDeployment": 0,
-    "commandRevisions": {},
+	"commands": {
+		"lastCommandDeployment": 0,
+		"commandRevisions": {}
+	},
 	"servers": [],
 	"users": []
 }

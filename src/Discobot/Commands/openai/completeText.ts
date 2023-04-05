@@ -8,7 +8,7 @@ import type {CreateCompletionRequest, CreateCompletionResponse, CreateCompletion
 import {IResult, Result} from "@tongtwist/result-js"
 import type {IOpenAI} from "../../../OpenAI.spec"
 import type {IDiscobot} from "../../../Discobot.spec"
-import type {ICommand} from "../../command.spec"
+import type {ICommand} from "../../Command.spec"
 import Command from "../../Command"
 import {log} from "../../../utils/log"
 

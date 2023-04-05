@@ -2,7 +2,7 @@ import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js"
 import type {Model} from "openai"
 import type {IOpenAI} from "../../../OpenAI.spec"
 import type {IDiscobot} from "../../../Discobot.spec"
-import type {ICommand} from "../../command.spec"
+import type {ICommand} from "../../Command.spec"
 import Command from "../../Command"
 
 /**

@@ -1,5 +1,5 @@
 import {ChatInputCommandInteraction, SlashCommandBuilder, SlashCommandStringOption} from "discord.js"
-import type {ICommand} from "../command.spec"
+import type {ICommand} from "../Command.spec"
 import Command from "../Command"
 
 /**
