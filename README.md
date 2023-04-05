@@ -15,7 +15,7 @@
 
 Quick start:
 ```sh
-npm install && npm run clean && npm run build
+npm install && npm run clean:dist && npm run build:src
 npm start
 ```
 Développement:
