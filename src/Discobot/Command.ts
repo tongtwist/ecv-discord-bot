@@ -1,5 +1,5 @@
 import type {SlashCommandBuilder} from "discord.js"
-import type {TCreationProperties, ICommand} from "./command.spec"
+import type {TCreationProperties, ICommand} from "./Command.spec"
 
 export default class Command implements ICommand {
 	private constructor(

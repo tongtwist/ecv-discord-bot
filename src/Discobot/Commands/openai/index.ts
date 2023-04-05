@@ -1,4 +1,4 @@
-import type {ICommand} from "../../command.spec"
+import type {ICommand} from "../../Command.spec"
 import {setup} from "./setup"
 import {listModels} from "./listModels"
 import {completeText} from "./completeText"

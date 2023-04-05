@@ -2,9 +2,9 @@ import type {Client, Guild} from "discord.js"
 import type {IServer} from "./Discobot/Server.spec"
 import type {IOpenAI} from "./OpenAI.spec"
 
-/**
+/************************************************************************************
  * Spécification de forme
- */
+ ***********************************************************************************/
 
 /**
  * Interface du bot utilisé par le reste du code
@@ -14,13 +14,23 @@ import type {IOpenAI} from "./OpenAI.spec"
  * @extends {Client}
  */
 export interface IDiscobot extends Client {
+	readonly clientId: string
+
+	/**
+	 * Renvoie le token du bot
+	 *
+	 * @return {string}
+	 * @memberof IDiscobot
+	 */
+	getToken(): string
+
 	/**
 	 * Lance le redéploiement éventuel des commandes en fonction de leur révision et de la date de dernier déploiement
 	 *
-	 * @return {Promise<void>}
+	 * @return {Promise<boolean>}
 	 * @memberof IDiscobot
 	 */
-	redeployCommands(): Promise<void>
+	redeployCommands(): Promise<boolean>
 
 	/**
 	 * Charge les serveurs depuis la configuration et à partir de l'API Discord
@@ -66,9 +76,25 @@ export interface IDiscobot extends Client {
 	 * @memberof IDiscobot
 	 */
 	setOpenAI(userId: string, openAI: IOpenAI | string | false, serverId?: string | Guild): Promise<IOpenAI | false>
+
+	/**
+	 * Retourne une instance de {@link IServer | Server} associée à un serveur discord (Guild) et la crée si elle n'existe pas
+	 *
+	 * @param {(string | Guild)} server
+	 * @return {Promise<IServer>}
+	 * @memberof IDiscobot
+	 */
 	getOrCreateServer(server: string | Guild): Promise<IServer>
+
+	/**
+	 * Sauvegarde la configuration du bot
+	 *
+	 * @return {Promise<void>}
+	 * @memberof IDiscobot
+	 */
+	saveConfig(): Promise<void>
 }
 
-/**
+/************************************************************************************
  * Spécification de comportement
- */
+ ***********************************************************************************/
