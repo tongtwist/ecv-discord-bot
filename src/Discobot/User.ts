@@ -1,7 +1,6 @@
 import {z} from "zod"
 import type {User as DiscordUser} from "discord.js"
-import type {IResult} from "../utils/Result.spec"
-import Result from "../utils/Result"
+import {IResult, Result} from "@tongtwist/result-js"
 import type {TJSONObject} from "../utils/JSON.spec"
 import type {IOpenAI} from "../OpenAI.spec"
 import OpenAI from "../OpenAI"

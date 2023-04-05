@@ -9,6 +9,8 @@
 - Node.js >= 18.0.0
 - Npm >= 9.0.0
 - Git LFS
+- Un compte Github
+- Un token d'acces Github enregistré dans une variable "GITHUB_TOKEN" de votre environnement de développement permettant d'importer des librairies Node.js à partir de https://npm.pkg.github.com/
 - Un compte OpenAI (pour les fonctionnalitées qui en dépendent)
 
 Quick start:

@@ -1,5 +1,5 @@
 import type {Model, OpenAIApi} from "openai"
-import type {IResult} from "../utils/Result.spec"
+import type {IResult} from "@tongtwist/result-js"
 
 /**
  * Spécification de forme

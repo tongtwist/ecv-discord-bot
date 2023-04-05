@@ -9,14 +9,12 @@ import {
 	REST,
 	Routes,
 	Guild,
-	User as DiscordUser,
 } from "discord.js"
 import {log} from "../utils/log"
-import Result from "../utils/Result"
+import {Result} from "@tongtwist/result-js"
 import type {TJSONObject} from "../utils/JSON.spec"
 import type {ICommand} from "./command.spec"
 import type {IOpenAI} from "../OpenAI.spec"
-import OpenAI from "../OpenAI"
 import type {TConfig as TUserConfig, IUser} from "./User.spec"
 import User from "./User"
 import type {TConfig as TServerConfig, IServer} from "./Server.spec"

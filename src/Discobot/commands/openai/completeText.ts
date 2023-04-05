@@ -5,8 +5,7 @@ import {
 	SlashCommandNumberOption,
 } from "discord.js"
 import type {CreateCompletionRequest, CreateCompletionResponse, CreateCompletionResponseChoicesInner} from "openai"
-import type {IResult} from "../../../utils/Result.spec"
-import Result from "../../../utils/Result"
+import {IResult, Result} from "@tongtwist/result-js"
 import type {IOpenAI} from "../../../OpenAI.spec"
 import type {IDiscobot} from "../../../Discobot.spec"
 import type {ICommand} from "../../command.spec"

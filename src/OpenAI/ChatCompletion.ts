@@ -1,7 +1,6 @@
 import type {AxiosResponse} from "axios"
 import type {OpenAIApi, CreateChatCompletionRequest, CreateChatCompletionResponse} from "openai"
-import type {IResult} from "../utils/Result.spec"
-import Result from "../utils/Result"
+import {IResult, Result} from "@tongtwist/result-js"
 import type {TChatCompletionParams, IChatCompletion} from "./ChatCompletion.spec"
 
 export default class ChatCompletion implements IChatCompletion {
