@@ -49,10 +49,3 @@ export default class OpenAI implements IOpenAI {
 		return new OpenAI(apiKey, api)
 	}
 }
-
-export type * from "./ListModels.spec"
-export type * from "./TextCompletion.spec"
-export type * from "./ChatCompletion.spec"
-export * from "./ListModels"
-export * from "./TextCompletion"
-export * from "./ChatCompletion"

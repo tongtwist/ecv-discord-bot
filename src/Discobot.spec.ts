@@ -1,10 +1,14 @@
+import {z} from "zod"
 import type {Client, Guild} from "discord.js"
-import type {IServer} from "./Discobot/Server.spec"
+import type {IServer} from "./Discobot/ServersManager/Server.spec"
 import type {IOpenAI} from "./OpenAI.spec"
+import Discobot from "./Discobot"
 
 /************************************************************************************
  * Spécification de forme
  ***********************************************************************************/
+
+export type TConfig = z.infer<typeof Discobot.configSchema>
 
 /**
  * Interface du bot utilisé par le reste du code

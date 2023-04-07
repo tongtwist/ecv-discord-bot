@@ -1,28 +1,86 @@
 import {writeFile} from "fs/promises"
-import {Client, Events, GatewayIntentBits, Guild} from "discord.js"
+import {z} from "zod"
+import {Client, GatewayIntentBits, Guild} from "discord.js"
 import {log} from "../utils/log"
-import {Result} from "@tongtwist/result-js"
-import type {TJSONObject} from "../utils/JSON.spec"
+import {IResult, Result} from "@tongtwist/result-js"
+import type {TJSONObject, TJSON} from "../utils/JSON.spec"
 import type {IOpenAI} from "../OpenAI.spec"
-import type {TConfig as TUserConfig, IUser} from "./User.spec"
-import User from "./User"
-import type {TConfig as TServerConfig, IServer} from "./Server.spec"
-import Server from "./Server"
-import type {ICommands} from "./Commands.spec"
-import Commands from "./Commands"
-import type {IDiscobot} from "../Discobot.spec"
+import type {ICommandsManager} from "./CommandsManager.spec"
+import CommandsManager from "./CommandsManager"
+import type {IEventsManager} from "./EventsManager.spec"
+import EventsManager from "./EventsManager"
+import type {IServersManager} from "./ServersManager.spec"
+import ServersManager from "./ServersManager"
+import type {IUsersManager} from "./UsersManager.spec"
+import UsersManager from "./UsersManager"
+import type {IServer} from "./ServersManager/Server.spec"
+import type {TConfig, IDiscobot} from "../Discobot.spec"
 
 export default class Discobot extends Client implements IDiscobot {
+	private static readonly _intents: GatewayIntentBits[] = [
+		GatewayIntentBits.Guilds,
+		GatewayIntentBits.GuildMembers,
+		GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.GuildMessageReactions,
+		GatewayIntentBits.GuildMessageTyping,
+		GatewayIntentBits.DirectMessages,
+		GatewayIntentBits.DirectMessageReactions,
+		GatewayIntentBits.DirectMessageTyping,
+	]
+
+	static readonly configSchema = z.object({
+		token: z.string().min(1),
+		inviteUrl: z.string().url(),
+		clientId: z.string().min(1),
+		commands: CommandsManager.configSchema,
+		servers: ServersManager.configSchema,
+		users: UsersManager.configSchema,
+	})
+
+	private static validateJSON(j: TJSON): j is TConfig {
+		return Discobot.configSchema.safeParse(j).success
+	}
+
+	private static create(cfg: TConfig, path: string): IDiscobot {
+		const serversManager = ServersManager.create(cfg.servers)
+		const usersManager = UsersManager.create(cfg.users)
+		const commandsManager = CommandsManager.create(cfg.commands)
+		const eventsManager = EventsManager.create()
+		return new Discobot(
+			cfg.token,
+			cfg.clientId,
+			commandsManager,
+			eventsManager,
+			cfg.inviteUrl,
+			serversManager,
+			usersManager,
+			path,
+		)
+	}
+
+	static async fromConfig(path: string): Promise<IResult<IDiscobot>> {
+		let j: TJSON
+		try {
+			j = await require(path)
+		} catch (e) {
+			return Result.fail(e as Error)
+		}
+		return Discobot.validateJSON(j)
+			? Result.success<IDiscobot>(Discobot.create(j, path))
+			: Result.fail(`Invalid config: ${JSON.stringify(j)}`)
+	}
+
 	private constructor(
 		private readonly _token: string,
 		private readonly _clientId: string,
-		private readonly _commands: ICommands,
+		private readonly _commandsManager: ICommandsManager,
+		private readonly _eventsManager: IEventsManager,
 		private readonly _inviteUrl: string,
-		private readonly _servers: Map<string, IServer>,
-		private readonly _users: Map<string, IUser>,
+		private readonly _serversManager: IServersManager,
+		private readonly _usersManager: IUsersManager,
 		private readonly _configPath: string,
 	) {
-		super({intents: [GatewayIntentBits.Guilds]})
+		super({intents: Discobot._intents})
 	}
 
 	get clientId() {
@@ -30,24 +88,13 @@ export default class Discobot extends Client implements IDiscobot {
 	}
 
 	private _configToJSON(): TJSONObject {
-		// Crée l'objet de stockage des serveurs
-		const servers: TJSONObject[] = []
-		for (const [serverId, server] of this._servers) {
-			servers.push(server.toJSON())
-		}
-		// Crée l'objet de stockage des users
-		const users: TJSONObject[] = []
-		for (const [userId, user] of this._users) {
-			users.push(user.toJSON())
-		}
-		// Crée le nouvel objet de configuration
 		return {
 			token: this._token,
 			inviteUrl: this._inviteUrl,
 			clientId: this._clientId,
-			commands: this._commands.toJSON(),
-			servers,
-			users,
+			commands: this._commandsManager.toJSON(),
+			servers: this._serversManager.toJSON(),
+			users: this._usersManager.toJSON(),
 		}
 	}
 
@@ -56,7 +103,7 @@ export default class Discobot extends Client implements IDiscobot {
 	}
 
 	redeployCommands(): Promise<boolean> {
-		return this._commands.redeploy(this)
+		return this._commandsManager.redeploy(this)
 	}
 
 	async saveConfig(): Promise<void> {
@@ -64,19 +111,6 @@ export default class Discobot extends Client implements IDiscobot {
 		const config = this._configToJSON()
 		// Enregistre la nouvelle configuration dans le fichier désigné par this._configPath
 		await writeFile(this._configPath, JSON.stringify(config, null, 4))
-	}
-
-	private async _handleCommands(): Promise<void> {
-		this.on(Events.InteractionCreate, this._commands.handle.bind(this._commands))
-	}
-
-	private async _loadAndHandleEvents(): Promise<void> {
-		// Charge les évènements à gérer
-		const {events} = await import("./events")
-		// Branche les handlers d'évènements sur les évènements
-		for (const event of events) {
-			this[event.once ? "once" : "on"](event.name, (...args: any[]) => event.execute(this, ...args))
-		}
 	}
 
 	async populateServers(): Promise<void> {
@@ -92,12 +126,10 @@ export default class Discobot extends Client implements IDiscobot {
 	}
 
 	async start(): Promise<void> {
-		// Charge les commandes
-		await this._commands.load()
-		// Gère les commandes
-		await this._handleCommands()
+		// Charge et gère les commandes
+		await this._commandsManager.init(this)
 		// Charge et gère les évènements
-		await this._loadAndHandleEvents()
+		this._eventsManager.init(this)
 		// Connexion
 		await super.login(this._token)
 	}
@@ -105,80 +137,33 @@ export default class Discobot extends Client implements IDiscobot {
 	getOpenAI(userId: string, serverId?: string | undefined): false | IOpenAI {
 		let res: IOpenAI | false = false
 		if (serverId) {
-			res = this._servers.get(serverId)?.openAI(userId) ?? false
+			res = this._serversManager.get(serverId)?.setupOpenAI(userId) ?? false
 		} else {
-			res = this._users.get(userId)?.openAI ?? false
+			res = this._usersManager.get(userId)?.openAI ?? false
 		}
 		return res
 	}
 
-	async setOpenAI(userId: string, openAI: string | false | IOpenAI, s?: string | Guild): Promise<false | IOpenAI> {
+	async setOpenAI(userId: string, openAI: string | false, s?: string | Guild): Promise<false | IOpenAI> {
 		if (!s) {
 			if (openAI === false) {
-				if (this._users.has(userId)) {
-					this._users.delete(userId)
-				}
+				this._usersManager.delete(userId)
 				return false
 			} else {
-				const newKey = typeof openAI === "string" ? openAI : openAI.key
-				const user: IUser | undefined = this._users.get(userId)
-				if (!user || user.openAI.key !== newKey) {
-					this._users.set(
-						userId,
-						User.create({id: userId, openAI: typeof openAI === "string" ? openAI : newKey}),
-					)
+				const [user, updated] = this._usersManager.getOrCreate({id: userId, openAI})
+				if (updated) {
 					await this.saveConfig()
 				}
-				return this._users.get(userId)!.openAI
+				return user.openAI
 			}
 		}
 		const server = await this.getOrCreateServer(s)
-		const res = server.openAI(userId, openAI)
+		const res = server.setupOpenAI(userId, openAI)
 		await this.saveConfig()
 		return res
 	}
 
 	async getOrCreateServer(s: string | Guild): Promise<IServer> {
-		const serverId = typeof s === "string" ? s : s.id
-		if (this._servers.has(serverId)) {
-			return this._servers.get(serverId)!
-		}
-		const server = typeof s === "string" ? Server.create({id: serverId, users: []}) : Server.fromGuild(s)
-		this._servers.set(serverId, server)
-		await this.saveConfig()
-		return server
-	}
-
-	static async fromConfig(path: string): Promise<IDiscobot> {
-		const cfg = await require(path)
-		const users: Map<string, IUser> = new Map()
-		cfg.users.forEach((userConfig: TUserConfig) => {
-			const resUser = User.fromJSON(userConfig)
-			if (Result.isSuccess(resUser)) {
-				users.set(userConfig.id, resUser.value)
-			}
-		})
-		const srvs: Map<string, IServer> = new Map()
-		cfg.servers.forEach((serverConfig: TServerConfig) => {
-			const resSrv = Server.fromJSON(serverConfig)
-			if (Result.isSuccess(resSrv)) {
-				srvs.set(serverConfig.id, resSrv.value)
-			}
-		})
-		const commands = Commands.create(cfg.commands)
-		return new Discobot(cfg.token, cfg.clientId, commands, cfg.inviteUrl, srvs, users, path)
+		return this._serversManager.getOrCreate(s)
 	}
 }
-
-export type {TCreationProperties as TCommandCreationProperties, ICommand} from "./Command.spec"
-export type {TCreationProperties as TEventCreationProperties, IEvent} from "./event.spec"
-export type {TConfig as TUserConfig, IUser} from "./User.spec"
-export type {TConfig as TServerConfig, IServer} from "./Server.spec"
-export type {TConfig as TCommandsConfig, ICommands} from "./Commands.spec"
-export * from "./Event"
-export * from "./Command"
-export * from "./User"
-export * from "./Server"
-export * from "./Commands"
-export * from "./events"
-export * from "./Commands"
